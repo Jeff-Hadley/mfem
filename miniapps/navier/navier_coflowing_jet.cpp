@@ -13,12 +13,12 @@
 //
 // Solve for steady flow defined by:
 //
-// P_inflow = 1 atm  
+// P_inflow = 1 atm
 // nu = 1.5x10^-3 m^2/s
 //
 //
 // The 2D problem domain is set up like this:
-// 
+//
 
 #include "mfem.hpp"
 #include "navier_solver.hpp"
@@ -44,7 +44,7 @@ struct s_NavierContext
    bool paraview = true;
    const char *mesh = "coflowing-jet-test.msh";
    const char *sol_dir = "jet_paraview_output";
-} ctx; 
+} ctx;
 
 // Dirichlet conditions for velocity
 void vel_ic(const Vector &x, double t, Vector &u);
@@ -81,17 +81,17 @@ int main(int argc, char *argv[])
                   "--disable-ni",
                   "Enable numerical integration rules.");
    args.AddOption(&ctx.paraview,
-                  "-paraview", 
-		  "--paraview-datafiles", 
-		  "-no-paraview",
-        	  "--no-paraview-datafiles",
-        	  "Save data files for ParaView (paraview.org) visualization.");
-   args.AddOption(&ctx.mesh, 
-                  "-m", 
+                  "-paraview",
+                  "--paraview-datafiles",
+                  "-no-paraview",
+                  "--no-paraview-datafiles",
+                  "Save data files for ParaView (paraview.org) visualization.");
+   args.AddOption(&ctx.mesh,
+                  "-m",
                   "--mesh",
                   "Mesh file to use.");
-   args.AddOption(&ctx.sol_dir, 
-                  "-sd", 
+   args.AddOption(&ctx.sol_dir,
+                  "-sd",
                   "--sol_dir",
                   "Paraview output directory to create.");
    args.Parse();
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
       args.PrintOptions(mfem::out);
    }
 
-   Mesh mesh = Mesh(ctx.mesh, 1, 1); 
+   Mesh mesh = Mesh(ctx.mesh, 1, 1);
 
    //Mesh refinement
    for (int i = 0; i < ctx.ser_ref_levels; ++i)
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
    flowsolver.EnableNI(ctx.ni); //Auto off - Change with command line options
 
    // Set the initial conditions.
-   ParGridFunction *u_ic = flowsolver.GetCurrentVelocity(); 
+   ParGridFunction *u_ic = flowsolver.GetCurrentVelocity();
    VectorFunctionCoefficient u_excoeff(pmesh->Dimension(), vel_ic);
    u_ic->ProjectCoefficient(u_excoeff);
 
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
    // "Walls" are attribute 1.
    attr[0] = 0; //sym bottom
    attr[1] = 0; //outlet
-   attr[2] = 0; //sym top 
+   attr[2] = 0; //sym top
    attr[3] = 1; //loq flow inlet
    attr[4] = 1; //high flow inlet
    attr[5] = 1; //low flow inlet
@@ -162,9 +162,9 @@ int main(int argc, char *argv[])
    ParGridFunction *u_gf = flowsolver.GetCurrentVelocity();
    ParGridFunction *p_gf = flowsolver.GetCurrentPressure();
 
-   //Paraview Data collection - Initializing based on command line flags - Auto on  
+   //Paraview Data collection - Initializing based on command line flags - Auto on
    ParaViewDataCollection *pvdc = NULL;
-   if(ctx.paraview)
+   if (ctx.paraview)
    {
       pvdc = new ParaViewDataCollection(ctx.sol_dir, pmesh);
       pvdc->SetDataFormat(VTKFormat::BINARY32);
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
       pvdc->Save();
    }
    //========================================================================
-   
+
    //Solving over time steps
    for (int step = 0; !last_step; ++step)
    {
@@ -188,13 +188,14 @@ int main(int argc, char *argv[])
 
       if (step == 1000)
       {
-      	dt = dt*10;
+         dt = dt*10;
       }
 
       flowsolver.Step(t, dt, step);
 
-      if (ctx.paraview && (step % 10 == 0)) //Storing every 10th time step for paraview visualization
-      //if (ctx.paraview) //Storing every 10th time step for paraview visualization
+      if (ctx.paraview &&
+          (step % 10 == 0)) //Storing every 10th time step for paraview visualization
+         //if (ctx.paraview) //Storing every 10th time step for paraview visualization
       {
          pvdc->SetCycle(step);
          pvdc->SetTime(t);
@@ -229,12 +230,12 @@ void vel_dbc(const Vector &x, double t, Vector &u)
 {
    double xi = x(0);
    double yi = x(1);
-   
+
    double U = 85.0; //Freestream velocity - Ma = 0.25
    double tol = 1e-6; //must be smaller than smallest mesh element
-   
+
    // Bottom boundary
-   if(yi <= -100.0+tol)
+   if (yi <= -100.0+tol)
    {
       u(1) = 0.0;
    }
@@ -243,19 +244,19 @@ void vel_dbc(const Vector &x, double t, Vector &u)
    {
       u(1) = 0.0;
    }
-   
+
    //Uniform inflow jet velocity at inlets on left boundary
-   if(xi <= tol)
-   {	
-      if(yi >= -0.5-tol && yi <= 0.5+tol)
+   if (xi <= tol)
+   {
+      if (yi >= -0.5-tol && yi <= 0.5+tol)
       {
-	   u(0) = 2*U;
-     	   u(1) = 0.0;
+         u(0) = 2*U;
+         u(1) = 0.0;
       }
       else
       {
-           u(0) = U;
-	   u(1) = 0.0;
+         u(0) = U;
+         u(1) = 0.0;
       }
-   }      
+   }
 }
